@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>비즈니스인사이트 Data Entry</title>
+</head>
+<body>
+    <p>
+        <a href="/">처음으로</a>
+    </p>
+    {% for item in param %}
+        <p>{{ item[0] }}: <a href="/down_file/{{ item[1] }}/{{ item[2] | replace('.', '[POINT]') | urlencode }}">{{ item[2] }}</a></p>
+    {% endfor %}
+    <p>매장 데이터:
+    {% if g_data['status_dict_vendor'] == 0 %}
+        미설정
+    {% elif g_data['status_dict_vendor'] == 1 %}
+        업로드 중
+    {% elif g_data['status_dict_vendor'] == 2 %}
+        변환 중
+    {% elif g_data['status_dict_vendor'] == 3 %}
+        로드 중
+    {% else %}
+        <a href="/down_file/store_data/{{ g_data['fname_dict_vendor'] }}">{{ g_data['fname_dict_vendor'] }}</a>
+    {% endif %}
+    </p>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>비즈니스인사이트 Data Entry</title>
+</head>
+<body>
+    {% if error == 'nodv' %}
+        <script>
+            alert('매장 데이터가 로드되지 않았습니다. 잠시 후 시도해주세요.');
+            window.location.href = '/step_two/no'
+        </script>
+    {% endif %}
+    <p>
+        <a href="/">처음으로</a>
+    </p>
+    <p>매장 데이터:
+    {% if g_data['status_dict_vendor'] == 0 %}
+        미설정
+    {% elif g_data['status_dict_vendor'] == 1 %}
+        업로드 중
+    {% elif g_data['status_dict_vendor'] == 2 %}
+        변환 중
+    {% elif g_data['status_dict_vendor'] == 3 %}
+        로드 중
+    {% else %}
+        <a href="/down_file/store_data/{{ g_data['fname_dict_vendor'] }}">{{ g_data['fname_dict_vendor'] }}</a>
+    {% endif %}
+    </p>
+    <p>
+        <form action="/file_input_upload_step_4" method="POST" enctype="multipart/form-data">
+            <input type="text" name="file_result_name" />
+            바로 업로드: <input type="file" name="file_input" multiple /> <input type="submit" />
+        </form>
+    </p>
+    <p>
+        완료된 파일<br>
+        {% for item in result_list %}
+            {% if item['err_flag'] == 0 %}
+                <a href="/down_file/result_step_4/{{ item['file_name'] }}">{{ item['file_name'] }}</a><br>
+            {% else %}
+                <a href="" onclick="javascript:alert('에러가 난 항목입니다.');">{{ item['file_name'] }}</a>&nbsp; <a href="/down_file/result_step_4_error/{{ item['file_name'] }}">에러 확인</a><br>
+            {% endif %}
+        {% endfor %}
+    </p>
+</body>
+</html>

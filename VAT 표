@@ -1,0 +1,37 @@
+VAT 표
+
+1229 Supervalu
+
+'CIGARETTES': 0,
+'DAIRY': 12,
+'DELI': 0,
+'EGGS': 0.2,
+'ETHNIC': 2.5,
+'FROZ BAKERY': 8,
+'FROZ FOOD': 21,
+'SUPPLIES': 6,
+'GEN MDSE': 13.5,
+'GROCERY': 11,
+'HBA': 14.5,
+'ICE': 23,  => ICE CREAM
+'MEAT': 0,
+'MILK': 0,
+'PRODUCE': 0
+
+001	Catonsville	MD300
+002	Ashburn	VA111
+003	Ellicott City	MD91
+004	Chantilly	VA77
+005	Germantown	MD100
+006	Gaithersburg	MD600
+007	Centreville	VA900
+008	Annandale	VA500
+009	Rockville	MD700
+010	Silver Spring	MD21
+* 011	Orlando	FL01 => 작업 제외
+012	Herndon	VA05
+013	Edison	NJ01
+
+F01, F902, F1000, F27, F1184, F26, Description, F1001, F19, F38, F39, F90, QTY, Amount, F1122, OLD CASE COST, NEW CASE COST, PRICE, OLD MARGIN, NEW MARGIN, Converted Price, CP Margin
+
+F01, F902, F1000, F27, F1184, F26, Description, F1001, F19, F38, F39, F90, QTY, Amount, F1122, OLD CASE COST, NEW CASE COST, PRICE, OLD MARGIN, NEW MARGIN, SRP

@@ -1,0 +1,27 @@
+# Project exclude paths
+/백업/
+/작업파일/
+/error/
+/error_step_4/
+/input_step_2/
+/input_step_4/
+/item_search/
+/loading_img/
+/org_store_data/
+/postprocess/
+/processed_store_data/
+/result_step_2/
+/result_step_4/
+/result_step_5/
+/srp_analysis/
+/srp_result/
+/base_file/
+/bin_store_data/
+/restore/
+/vendor_data/
+/미처리인보이스원본/
+/111919 상품번호 마스터 (BI).xlsx
+/lotteplaza.zip
+/첨부 1. 1단계 입력 폼.xlsx
+/첨부 1. 1단계 입력 폼 CS.xlsx
+/첨부 1-2. BAKHTAR_FORMAT.xlsx

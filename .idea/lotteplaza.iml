@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="PYTHON_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/백업" />
+      <excludeFolder url="file://$MODULE_DIR$/작업파일" />
+      <excludeFolder url="file://$MODULE_DIR$/base_file" />
+      <excludeFolder url="file://$MODULE_DIR$/bin_store_data" />
+      <excludeFolder url="file://$MODULE_DIR$/error" />
+      <excludeFolder url="file://$MODULE_DIR$/error_step_4" />
+      <excludeFolder url="file://$MODULE_DIR$/input_step_2" />
+      <excludeFolder url="file://$MODULE_DIR$/input_step_4" />
+      <excludeFolder url="file://$MODULE_DIR$/item_search" />
+      <excludeFolder url="file://$MODULE_DIR$/org_store_data" />
+      <excludeFolder url="file://$MODULE_DIR$/postprocess" />
+      <excludeFolder url="file://$MODULE_DIR$/processed_store_data" />
+      <excludeFolder url="file://$MODULE_DIR$/restore" />
+      <excludeFolder url="file://$MODULE_DIR$/result_step_2" />
+      <excludeFolder url="file://$MODULE_DIR$/result_step_4" />
+      <excludeFolder url="file://$MODULE_DIR$/result_step_5" />
+      <excludeFolder url="file://$MODULE_DIR$/srp_analysis" />
+      <excludeFolder url="file://$MODULE_DIR$/srp_result" />
+      <excludeFolder url="file://$MODULE_DIR$/static" />
+      <excludeFolder url="file://$MODULE_DIR$/templates" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor_data" />
+      <excludeFolder url="file://$MODULE_DIR$/미처리인보이스원본" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="pytest" />
+  </component>
+</module>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>비즈니스인사이트 Data Entry</title>
+</head>
+<body>
+    <p>현재 기준데이터</p>
+    <p>매장 데이터:
+    {% if g_data['status_dict_vendor'] == 0 %}
+        미설정
+    {% elif g_data['status_dict_vendor'] == 1 %}
+        업로드 중
+    {% elif g_data['status_dict_vendor'] == 2 %}
+        변환 중
+    {% elif g_data['status_dict_vendor'] == 3 %}
+        로드 중
+    {% else %}
+        <a href="/down_file/store_data/{{ g_data['fname_dict_vendor'] }}">{{ g_data['fname_dict_vendor'] }}</a>
+    {% endif %}
+    </p>
+    <p><a href="/change_base_data">기준 데이터 관리</a></p>
+    <p><a href="/step_two/no">2단계 데이터 처리</a></p>
+    <p><a href="/step_four/no">4단계 데이터 처리(관리자용)</a></p>
+    <p><a href="/reference">자료실</a></p>
+</body>
+</html>
