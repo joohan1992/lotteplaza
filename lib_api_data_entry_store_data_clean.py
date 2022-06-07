@@ -12,6 +12,7 @@ flag_ignore_srp_sticker = True
 flag_enable_cp_price = True
 flag_enable_depart_vat = True
 flag_margin_diff = True
+flag_sv_fee_per_store = True
 
 
 def getFormalUPC(upc, vc):
@@ -107,6 +108,42 @@ def getFormalAMT(csize, ccost):
 
 
 def getVAT(vc, sc, dp):
+    vat_depart_per_store = {
+        'VM': {
+            'CIGARETTES': 0.0,
+            'DAIRY': 12.0,
+            'DELI': 0.0,
+            'EGGS': 0.2,
+            'ETHNIC': 3.0,
+            'FROZ BAKERY': 8.5,
+            'FROZ FOOD': 21.0,
+            'SUPPLIES': 6.0,
+            'GEN MDSE': 13.0,
+            'GROCERY': 12.0,
+            'HBA': 14.5,
+            'ICE': 23.0,
+            'MEAT': 0.0,
+            'MILK': 0.0,
+            'PRODUCE': 0.0
+        },
+        'NJ': {
+            'CIGARETTES': 0.0,
+            'DAIRY': 16.0,
+            'DELI': 0.0,
+            'EGGS': 0.2,
+            'ETHNIC': 6.0,
+            'FROZ BAKERY': 8.0,
+            'FROZ FOOD': 25.0,
+            'SUPPLIES': 6.0,
+            'GEN MDSE': 13.5,
+            'GROCERY': 12.5,
+            'HBA': 14.5,
+            'ICE': 36.0,
+            'MEAT': 0.0,
+            'MILK': 0.0,
+            'PRODUCE': 0.0
+        }
+    }
     vat_depart = {
         'CIGARETTES': 0,
         'DAIRY': 12,
@@ -124,6 +161,11 @@ def getVAT(vc, sc, dp):
         'MILK': 0,
         'PRODUCE': 0
     }
+    if flag_sv_fee_per_store:
+        if sc in ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '012']:
+            vat_depart = vat_depart_per_store['VM']
+        elif sc in ['013']:
+            vat_depart = vat_depart_per_store['NJ']
     if vc is not None and vc == '1229':
         if flag_enable_depart_vat and sc == '011':
             return 1.5
@@ -1794,24 +1836,6 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
 
 
 def getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat):
-
-    vat_depart = {
-        'CIGARETTES': 0,
-        'DAIRY': 12,
-        'DELI': 0,
-        'EGGS': 0.2,
-        'ETHNIC': 2.5,
-        'FROZ BAKERY': 8,
-        'FROZ FOOD': 21,
-        'SUPPLIES': 6,
-        'GEN MDSE': 13.5,
-        'GROCERY': 11,
-        'HBA': 14.5,
-        'ICE': 23,
-        'MEAT': 0,
-        'MILK': 0,
-        'PRODUCE': 0
-    }
 
     result_old_margin = ''
     result_new_margin = ''
