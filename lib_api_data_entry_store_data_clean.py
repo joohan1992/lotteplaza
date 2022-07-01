@@ -122,7 +122,7 @@ def getVAT(vc, sc, dp):
             'GROCERY': 12.0,
             'HBA': 14.5,
             'ICE': 23.0,
-            'MEAT': 0.0,
+            'MEAT': 0.2,
             'MILK': 0.0,
             'PRODUCE': 0.0
         },
