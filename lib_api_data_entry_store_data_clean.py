@@ -11,8 +11,9 @@ import pickle
 flag_ignore_srp_sticker = True
 flag_enable_cp_price = True
 flag_enable_depart_vat = True
-flag_margin_diff = True
 flag_sv_fee_per_store = True
+# 1번 서버는 False 2번 서버는 True
+flag_margin_diff = True
 
 
 def getFormalUPC(upc, vc):
