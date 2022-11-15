@@ -2653,6 +2653,8 @@ def process_step_four(thread_id, g_data, param1):
                 if tmp_c_or_e is None:
                     tmp_c_or_e = ''
                 tmp_flag_processed_ce = row[38].value
+                if tmp_ncost is None:
+                    print(f'{f} _ {idx1} _ {arr1}')
                 valid_cost = float(tmp_ncost)
                 valid_cost = float(tmp_amt)
                 valid_qty = float(tmp_qty)

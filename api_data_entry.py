@@ -290,6 +290,8 @@ def practice():
 
 
 if __name__ == '__main__':
+    port_num = g_data['base_address'].rsplit(':', 1)[1]
+    print(f'Loading MARGIN_DIFF_FLAG {de_lib.flag_margin_diff} on {port_num}')
     de_lib.read_config(g_data)
     de_lib_load.read_vendor_code(g_data)
     app.secret_key = "super secret key"
@@ -302,4 +304,4 @@ if __name__ == '__main__':
     for base_dir_unit in base_dir_list:
         if not isdir('./'+base_dir_unit):
             mkdir('./'+base_dir_unit)
-    app.run(host='0.0.0.0', port=int(g_data['base_address'].rsplit(':', 1)[1]))
+    app.run(host='0.0.0.0', port=int(port_num))
