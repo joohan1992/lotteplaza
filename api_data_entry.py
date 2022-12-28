@@ -14,7 +14,7 @@ import lib_api_data_entry_store_data_clean as de_lib
 import lib_api_data_entry_load as de_lib_load
 
 
-g_data = {'base_address': 'http://211.244.159.17:8082',
+g_data = {'base_address': 'http://211.58.242.46:8082',
           'fname_dict_vendor': '',
           'status_dict_vendor': 0,
           'fname_dict_store': '',
@@ -25,7 +25,7 @@ g_data = {'base_address': 'http://211.244.159.17:8082',
           'dict_vend': None,
           'list_step_two': {},
           'list_step_four': {},
-          'fname_base_data': '051922 INVOICE FORMAT.xlsx',
+          'fname_base_data': '120922 INVOICE FORMAT.xlsx',
           # 업체 데이터 활용 시 기본 설정값
           # - name: 파일명
           # - sheet: 시트명
@@ -296,9 +296,9 @@ if __name__ == '__main__':
     de_lib_load.read_vendor_code(g_data)
     app.secret_key = "super secret key"
     app.config['SESSION_TYPE'] = 'filesystem'
-    app.config['UPLOAD_FOLDER'] = 'C:/Users/user/PycharmProjects/lotteplaza/input_step_2'
-    app.config['UPLOAD_FOLDER_STEP_FOUR'] = 'C:/Users/user/PycharmProjects/lotteplaza/input_step_4'
-    app.config['UPLOAD_FOLDER_STEP_FIVE'] = 'C:/Users/user/PycharmProjects/lotteplaza/input_step_5'
+    app.config['UPLOAD_FOLDER'] = 'C:/Users/user/Documents/GitHub/lotteplaza/input_step_2'
+    app.config['UPLOAD_FOLDER_STEP_FOUR'] = 'C:/Users/user/Documents/GitHub/lotteplaza/input_step_4'
+    app.config['UPLOAD_FOLDER_STEP_FIVE'] = 'C:/Users/user/Documents/GitHub/lotteplaza/input_step_5'
     cache.init_app(app)
     base_dir_list = ['org_store_data', 'processed_store_data', 'base_file', 'input_step_2', 'result_step_2', 'error', 'input_step_4', 'result_step_4', 'srp_result']
     for base_dir_unit in base_dir_list:

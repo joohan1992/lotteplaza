@@ -7,11 +7,12 @@ import threading
 import time
 import pickle
 
-
 flag_ignore_srp_sticker = True
 flag_enable_cp_price = True
 flag_enable_depart_vat = True
 flag_sv_fee_per_store = True
+
+
 # 1번 서버는 False 2번 서버는 True
 flag_margin_diff = True
 
@@ -1854,7 +1855,7 @@ def getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_p
                     (float(result_new_case_cost) / float(result_csize)) * (
                     1.0 + (float(tmp_vat) / 100.0)))) / float(result_price)
             if float(result_old_case_cost) < float(result_new_case_cost):
-                if float(result_old_margin) == 1.0:
+                if float(result_old_margin) == 1.0: # 기존 공급가가 0원
                     converted_price = get_converted_price(float(result_price))
                     if flag_enable_cp_price and converted_price != result_price:
                         if flag_margin_diff:
