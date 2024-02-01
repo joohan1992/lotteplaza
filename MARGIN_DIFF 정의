@@ -1,0 +1,45 @@
+ORG 중에서
+RB_IDX, SW_IDX가 아니고
+CB_UDF_IDX도 아니고
+CB_EX_IDX도 아니여야 추가
+
+clover 특정 품목이면서 마진이 없음 => CB_UDF_IDX
+그외
+	예외업체(RB, SW) => RB_IDX or SW_IDX
+	아니면 분류가 있으면 => CB_UDF_IDX
+	아니면 srp가 ' '이 아니면 => CB_EX_IDX
+
+	예외 업체가 아니면서
+		old마진과 new마진 중 하나라도 값이 없으면 => CB_UDF_IDX
+		아니면 CB_EX_IDX가 아니면서
+			old마진이 0.01보다 작거나 0.59보다 큰 경우 => CB_UDF_IDX
+			아니면 new마진이 그런경우 => CB_UDF_IDX
+
+	제품코드가 0인경우 => CB_UDF_IDX
+
+
+
+csize, oldcasecost, newcasecost, price가 하나라도 없으면 srp = ''
+csize, price가 하나라도 0보다 크지 않으면 srp = ''
+newcase가격이 더 비싸졌을때
+	기존 마진이 100인 경우
+		변환가격이 기존 판매가와 다른 경우
+			새로운가격일때의 마진이 기존 마진과 0.03이하로 차이나는 경우 srp = ' '
+			그외에는 srp = 변환가격
+		같은 경우 srp = ' '
+	그외
+		새로운가격일때의 마진이 기존 마진과 0.03이하로 차이나는 경우 srp = ' '
+		그외에는 복잡한 계산식을 통한 값을 srp로 지정
+그외
+	변환 가격이 기존 가격과 다른 경우
+		마진 차이가 0.03인 경우 srp = ' '
+		그외에는 srp = 변환가격
+	같으면 srp = ' '
+
+
+* 변환 가격
+	n.00 => n-1.99
+	n.01~n.30 => n.29
+	n.31~n.50 => n.49
+	n.51~n.80 => n.79
+	n.81~n.99 => n.99

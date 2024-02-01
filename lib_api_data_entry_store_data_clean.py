@@ -16,6 +16,9 @@ flag_sv_fee_per_store = True
 # 1번 서버는 False 2번 서버는 True
 flag_margin_diff = True
 
+def setFlagMarginDiff(flagMarginDiff):
+    global flag_margin_diff
+    flag_margin_diff = flagMarginDiff
 
 def getFormalUPC(upc, vc):
     if upc is None or upc == '':
@@ -164,18 +167,26 @@ def getVAT(vc, sc, dp):
         'PRODUCE': 0
     }
     if flag_sv_fee_per_store:
-        if sc in ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '012']:
+        # VA 또는 MD에 적용할 Supervalu Department별 수수료 셋
+        if sc in ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '012', '014']:
             vat_depart = vat_depart_per_store['VM']
+        # NJ에 적용할 Supervalu Department별 수수료 셋
         elif sc in ['013']:
             vat_depart = vat_depart_per_store['NJ']
     if vc is not None and vc == '1229':
-        if flag_enable_depart_vat and sc == '011':
+        if flag_enable_depart_vat and sc in ['011', '015']:
             return 1.5
         elif flag_enable_depart_vat and dp is not None and dp in vat_depart:
             return vat_depart[dp]
         return 11.5
-    elif sc is not None and sc == '011':
+    elif sc is not None and sc in ['011']:
         return 5
+    elif sc is not None and sc in ['015']:
+        # 231127 FL02 업체별 VAT 추가
+        if vc in ['0733', '0750', '0743', '0796', '0749', '0712', '0301', '0159', '0106', '0108', '0201', '0401', '0179', '0304', '0423', '4574', '0142', '0405', '0316', '4648', '0317', '0318', '0319']:
+            return 5
+        else:
+            return 0
     else:
         return 0
 
@@ -402,33 +413,28 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                                     tmp_ic2 = key1
                                     flag_exist_exact = True
                                     break
-                        '''
-                        for key2 in dict_vendor[tmp_vc][key1]:
-                            if key2 == 'upc_dict':
-                                continue
-                            for key3 in dict_vendor[tmp_vc][key1][key2]:
-                                if key3 == tmp_upc2:
-                                    flag_exist_upc = True
-                                    flag_exist_upc_cand = False
-                                    tmp_ic2 = key1
-                                    last_sc = key2
-                                    if key2 == tmp_sc:
-                                        flag_exist_exact = True
+                        elif tmp_sc in g_data['list_new_store']:
+                            for key2 in dict_vendor[tmp_vc][key1]:
+                                if key2 == 'upc_dict':
+                                    continue
+                                for key3 in dict_vendor[tmp_vc][key1][key2]:
+                                    if key3 == tmp_upc2:
+                                        flag_exist_upc = True
+                                        flag_exist_upc_cand = False
+                                        tmp_ic2 = key1
+                                        last_sc = key2
                                         break
-                                elif key3 in tmp_upc_cand:
-                                    flag_exist_upc_cand = True
-                                    flag_exist_upc = False
-                                    idx_upc_cand = tmp_upc_cand.index(key3)
-                                    tmp_ic2 = key1
-                                    last_sc = key2
-                                    if key2 == tmp_sc:
-                                        flag_exist_exact = True
+                                    elif key3 in tmp_upc_cand:
+                                        flag_exist_upc_cand = True
+                                        flag_exist_upc = False
+                                        idx_upc_cand = tmp_upc_cand.index(key3)
+                                        tmp_ic2 = key1
+                                        last_sc = key2
                                         break
-                            if flag_exist_exact:
+                                if flag_exist_upc or flag_exist_upc_cand:
+                                    break
+                            if flag_exist_upc or flag_exist_upc_cand:
                                 break
-                        if flag_exist_exact:
-                            break
-                        '''
 
                     # UPC가 없는 경우
                     if not flag_exist_upc and not flag_exist_upc_cand:
@@ -472,7 +478,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                         result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                         result_note = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['note']
                         if flag_ignore_srp_sticker and result_note == 'STICKER':
-                            print(tmp_ic + "\t" + tmp_upc)
+                            # print(tmp_ic + "\t" + tmp_upc)
                             result_srp = ' '
 
         # L1 prefix를 사용하면서 prefix를 붙인 ic가 매장데이터에 있는 경우
@@ -480,7 +486,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
             org_tmp_ic = tmp_ic
             tmp_ic = tmp_ic_cand[0]
 
-            # L2 Store Code가 없는 경우
+            # L2 Store Code가 없거나 prefix ic를 가지는 Store가 아닌 경우
             if tmp_sc is None or tmp_sc not in dict_vendor[tmp_vc][tmp_ic]:
                 # prefix 적용 안된 ic로 해당 점포 기록이 있는 경우
                 if tmp_sc is not None and org_tmp_ic in dict_vendor[tmp_vc] and tmp_sc in dict_vendor[tmp_vc][org_tmp_ic]:
@@ -523,7 +529,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                         result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                         result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['note']
                         if flag_ignore_srp_sticker and result_note == 'STICKER':
-                            print(tmp_ic + "\t" + tmp_upc)
+                            # print(tmp_ic + "\t" + tmp_upc)
                             result_srp = ' '
 
                         result_upc_check = '1'
@@ -554,6 +560,8 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                             idx_upc_cand = -1
                             for key1 in dict_vendor[tmp_vc]:
                                 if tmp_sc in dict_vendor[tmp_vc][key1]:
+                                    if tmp_sc == 'upc_dict':
+                                        continue
                                     last_sc = tmp_sc
                                     for key3 in dict_vendor[tmp_vc][key1][tmp_sc]:
                                         if key3 == tmp_upc2:
@@ -766,7 +774,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                                 result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                                 result_note = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['note']
                                 if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                    print(tmp_ic + "\t" + tmp_upc)
+                                    # print(tmp_ic + "\t" + tmp_upc)
                                     result_srp = ' '
 
                         else:
@@ -783,23 +791,24 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                             result_ic = result_cand_ic[0]
 
                 # UPC is sole
-                elif len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) == 1 and tmp_sc in dict_vendor[tmp_vc][tmp_ic]:
+                elif tmp_sc is not None and tmp_sc in g_data['list_new_store'] and len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) == 1:
                     result_upc_check = '1'
-                    # itr = iter(dict_vendor[tmp_vc][tmp_ic])
-                    # next(itr)
-                    # tmp_sc2 = next(itr)
-                    result_upc = next(iter(dict_vendor[tmp_vc][tmp_ic][tmp_sc]))
+                    itr = iter(dict_vendor[tmp_vc][tmp_ic])
+                    next(itr)
+                    tmp_sc2 = next(itr)
+                    result_upc = next(iter(dict_vendor[tmp_vc][tmp_ic]['upc_dict']))
+
                     result_desc_lookup_base = 'I'
-                    result_desc = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['desc']
-                    result_csize = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['csize']
-                    vendor_csize = lookup_vendor_ic(g_data, result_csize, tmp_vc, tmp_sc, tmp_ic_cand, tmp_upc)
+                    result_desc = dict_vendor[tmp_vc][tmp_ic][tmp_sc2][result_upc]['desc']
+                    result_csize = dict_vendor[tmp_vc][tmp_ic][tmp_sc2][result_upc]['csize']
+                    vendor_csize = lookup_vendor_ic(g_data, result_csize, tmp_vc, tmp_sc2, tmp_ic_cand, tmp_upc)
                     if float(vendor_csize) != float(result_csize):
                         detail_cat = '업체 데이터로 Lookup해온 F19 대체'
                     result_csize = vendor_csize
                     if param_etc['step'] == 4 and tmp_vc in ['1205', '1210']:
                         result_csize = 1
                         detail_cat = 'Frito-ray 및 Cloverland F19 1로 고정'
-                    result_old_case_cost = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['ccost']
+                    result_old_case_cost = dict_vendor[tmp_vc][tmp_ic][tmp_sc2][result_upc]['ccost']
                     result_new_case_cost = tmp_ncost
                     if tmp_flag_processed_ce == 1:
                         result_ncost = tmp_ncost * result_csize
@@ -810,12 +819,12 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                         result_ncost = (tmp_ncost / tmp_csize) * result_csize
                         result_new_case_cost = (tmp_ncost / tmp_csize) * result_csize
                         result_amt = (tmp_amt / tmp_csize) * result_csize
-                    result_price = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['price']
+                    result_price = dict_vendor[tmp_vc][tmp_ic][tmp_sc2][result_upc]['price']
 
                     result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
-                    result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['note']
+                    result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc2][result_upc]['note']
                     if flag_ignore_srp_sticker and result_note == 'STICKER':
-                        print(tmp_ic + "\t" + tmp_upc)
+                        # print(tmp_ic + "\t" + tmp_upc)
                         result_srp = ' '
 
                     tmp_upc_3, tmp_upc_cand = getFormalUPC(tmp_upc, tmp_vc)
@@ -830,8 +839,8 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                         result_ic = result_cand_ic[0]
 
                 # UPC is duplicated
-                elif len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) > 1 and tmp_sc in dict_vendor[tmp_vc][tmp_ic]:
-                    result_upc_check = str(len(dict_vendor[tmp_vc][tmp_ic][tmp_sc].keys()))
+                elif tmp_sc is not None and tmp_sc in g_data['list_new_store'] and len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) > 1:
+                    result_upc_check = str(len(dict_vendor[tmp_vc][tmp_ic]['upc_dict'].keys()))
 
                     if tmp_upc is None:
                         dict_error_flag['duplicate'] = 1
@@ -845,17 +854,23 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                         last_sc = tmp_sc
                         last_sc_cand = tmp_sc
                         idx_upc_cand = -1
-                        if tmp_sc in dict_vendor[tmp_vc][tmp_ic]:
-                            for key2 in dict_vendor[tmp_vc][tmp_ic][tmp_sc]:
+                        for iter_sc in dict_vendor[tmp_vc][tmp_ic]:
+                            if iter_sc == 'upc_dict':
+                                continue
+                            for key2 in dict_vendor[tmp_vc][tmp_ic][iter_sc]:
                                 if key2 == tmp_upc2:
+                                    last_sc = iter_sc
                                     flag_exist_upc = True
                                     flag_exist_upc_cand = False
                                     break
                                 if key2 in tmp_upc_cand:
+                                    last_sc_cand = iter_sc
                                     flag_exist_upc_cand = True
                                     flag_exist_upc = False
                                     idx_upc_cand = tmp_upc_cand.index(key2)
                                     break
+                            if flag_exist_upc or flag_exist_upc_cand:
+                                break
                         '''
                         for key1 in dict_vendor[tmp_vc][tmp_ic]:
                             if key1 == 'upc_dict':
@@ -890,9 +905,13 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                             else:
                                 result_upc = tmp_upc_cand[idx_upc_cand]
                                 last_sc = last_sc_cand
-                            result_desc = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['desc']
-                            result_csize = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['csize']
-                            vendor_csize = lookup_vendor_ic(g_data, result_csize, tmp_vc, tmp_sc, tmp_ic_cand, tmp_upc)
+                            # print('***************************"')
+                            # print(result_upc)
+                            # print(dict_vendor[tmp_vc][tmp_ic][last_sc])
+                            # print('***************************"')
+                            result_desc = dict_vendor[tmp_vc][tmp_ic][last_sc][''+result_upc]['desc']
+                            result_csize = dict_vendor[tmp_vc][tmp_ic][last_sc][''+result_upc]['csize']
+                            vendor_csize = lookup_vendor_ic(g_data, result_csize, tmp_vc, last_sc, tmp_ic_cand, tmp_upc)
                             if float(vendor_csize) != float(result_csize):
                                 detail_cat = '업체 데이터로 Lookup해온 F19 대체'
                             result_csize = vendor_csize
@@ -915,7 +934,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                             result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                             result_note = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['note']
                             if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                print(tmp_ic + "\t" + tmp_upc)
+                                # print(tmp_ic + "\t" + tmp_upc)
                                 result_srp = ' '
                     result_ic = tmp_ic
                     result_cand_ic = getFormalItemCode(result_ic, tmp_vc, dict_vend)
@@ -928,7 +947,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                     if len(result_cand_ic) == 2:
                         result_ic = result_cand_ic[0]
 
-            # L2 Store Code가 있는 경우
+            # L2 Store Code가 있고 prefix ic를 가지는 Store이인 경우
             elif tmp_sc is not None and tmp_sc in dict_vendor[tmp_vc][tmp_ic]:
 
                 # Store Code에 중복없이 하나의 UPC만 있는 경우
@@ -959,7 +978,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                     result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                     result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['note']
                     if flag_ignore_srp_sticker and result_note == 'STICKER':
-                        print(tmp_ic + "\t" + tmp_upc)
+                        # print(tmp_ic + "\t" + tmp_upc)
                         result_srp = ' '
 
                     result_upc_check = '1'
@@ -984,54 +1003,20 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                         flag_exist_upc = False
                         flag_exist_upc_cand = False
                         flag_exist_exact = False
-                        tmp_ic2 = ''
-                        last_sc = tmp_sc
                         idx_upc_cand = -1
-                        for key1 in dict_vendor[tmp_vc]:
-                            if tmp_sc in dict_vendor[tmp_vc][key1]:
-                                for key3 in dict_vendor[tmp_vc][key1][tmp_sc]:
-                                    if key3 == tmp_upc2:
-                                        flag_exist_upc = True
-                                        flag_exist_upc_cand = False
-                                        tmp_ic2 = key1
-                                        flag_exist_exact = True
-                                        break
-                                    if key3 in tmp_upc_cand:
-                                        flag_exist_upc_cand = True
-                                        flag_exist_upc = False
-                                        idx_upc_cand = tmp_upc_cand.index(key3)
-                                        tmp_ic2 = key1
-                                        flag_exist_exact = True
-                                        break
-                            if flag_exist_exact:
+
+                        for key3 in dict_vendor[tmp_vc][tmp_ic][tmp_sc]:
+                            if key3 == tmp_upc2:
+                                flag_exist_upc = True
+                                flag_exist_upc_cand = False
+                                flag_exist_exact = True
                                 break
-                            '''
-                            for key2 in dict_vendor[tmp_vc][key1]:
-                                if key2 == 'upc_dict':
-                                    continue
-                                for key3 in dict_vendor[tmp_vc][key1][key2]:
-                                    if key3 == tmp_upc2:
-                                        flag_exist_upc = True
-                                        flag_exist_upc_cand = False
-                                        tmp_ic2 = key1
-                                        last_sc = key2
-                                        if key2 == tmp_sc:
-                                            flag_exist_exact = True
-                                            break
-                                    if key3 in tmp_upc_cand:
-                                        flag_exist_upc_cand = True
-                                        flag_exist_upc = False
-                                        idx_upc_cand = tmp_upc_cand.index(key3)
-                                        tmp_ic2 = key1
-                                        last_sc = key2
-                                        if key2 == tmp_sc:
-                                            flag_exist_exact = True
-                                            break
-                                if flag_exist_exact:
-                                    break
-                            if flag_exist_exact:
+                            if key3 in tmp_upc_cand:
+                                flag_exist_upc_cand = True
+                                flag_exist_upc = False
+                                idx_upc_cand = tmp_upc_cand.index(key3)
+                                flag_exist_exact = True
                                 break
-                            '''
 
                         # UPC가 Store 내에 없는 경우
                         if not flag_exist_upc and not flag_exist_upc_cand:
@@ -1039,7 +1024,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                             for cand in dict_vendor[tmp_vc][tmp_ic][tmp_sc]:
                                 tmp_upc_cand_list.append(cand)
                             tmp_upc_cand2.extend(tmp_upc_cand_list)
-                            if False and len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) > 0:
+                            if tmp_sc in g_data['list_new_store'] and len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) > 0:
                                 # UPC is sole
                                 if len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) == 1:
                                     result_upc_check = '1'
@@ -1073,7 +1058,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                                     result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                                     result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc2][result_upc]['note']
                                     if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                        print(tmp_ic + "\t" + tmp_upc)
+                                        # print(tmp_ic + "\t" + tmp_upc)
                                         result_srp = ' '
 
                                     tmp_upc3, tmp_upc_cand = getFormalUPC(result_upc, tmp_vc)
@@ -1153,7 +1138,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                                             result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                                             result_note = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['note']
                                             if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                                print(tmp_ic + "\t" + tmp_upc)
+                                                # print(tmp_ic + "\t" + tmp_upc)
                                                 result_srp = ' '
 
                                 else:
@@ -1168,8 +1153,8 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                                 result_upc = tmp_upc2
                             else:
                                 result_upc = tmp_upc_cand[idx_upc_cand]
-                            result_desc = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['desc']
-                            result_csize = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['csize']
+                            result_desc = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['desc']
+                            result_csize = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['csize']
                             vendor_csize = lookup_vendor_ic(g_data, result_csize, tmp_vc, tmp_sc, tmp_ic_cand, tmp_upc)
                             if float(vendor_csize) != float(result_csize):
                                 detail_cat = '업체 데이터로 Lookup해온 F19 대체'
@@ -1177,7 +1162,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                             if param_etc['step'] == 4 and tmp_vc in ['1205', '1210']:
                                 result_csize = 1
                                 detail_cat = 'Frito-ray 및 Cloverland F19 1로 고정'
-                            result_old_case_cost = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['ccost']
+                            result_old_case_cost = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['ccost']
                             result_new_case_cost = tmp_ncost
                             if tmp_flag_processed_ce == 1:
                                 result_ncost = tmp_ncost * result_csize
@@ -1188,14 +1173,14 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                                 result_ncost = (tmp_ncost / tmp_csize) * result_csize
                                 result_new_case_cost = (tmp_ncost / tmp_csize) * result_csize
                                 result_amt = (tmp_amt / tmp_csize) * result_csize
-                            result_price = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['price']
+                            result_price = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['price']
 
                             result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
-                            result_note = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['note']
+                            result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['note']
                             if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                print(tmp_ic + "\t" + tmp_upc)
+                                # print(tmp_ic + "\t" + tmp_upc)
                                 result_srp = ' '
-                            result_ic = tmp_ic2
+                            result_ic = tmp_ic
                             result_cand_ic = getFormalItemCode(result_ic, tmp_vc, dict_vend)
                             if len(result_cand_ic) == 2:
                                 result_ic = result_cand_ic[0]
@@ -1218,11 +1203,11 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
         # L1 기 등록된 상품 (Vendor Code & Item Code 기준)
         elif tmp_ic in dict_vendor[tmp_vc]:
 
-            # L2 Store Code가 없는 경우
+            # L2 입력된 Store Code가 없거나 해당 아이템코드를 가진 Store가 아닌 경우
             if tmp_sc is None or tmp_sc not in dict_vendor[tmp_vc][tmp_ic]:
 
                 # UPC is sole
-                if False and len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) == 1:
+                if tmp_sc in g_data['list_new_store'] and len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) == 1:
                     result_upc_check = '1'
                     itr = iter(dict_vendor[tmp_vc][tmp_ic])
                     next(itr)
@@ -1254,7 +1239,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                     result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                     result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc2][result_upc]['note']
                     if flag_ignore_srp_sticker and result_note == 'STICKER':
-                        print(tmp_ic + "\t" + tmp_upc)
+                        # print(tmp_ic + "\t" + tmp_upc)
                         result_srp = ' '
 
                     tmp_upc_3, tmp_upc_cand = getFormalUPC(tmp_upc, tmp_vc)
@@ -1264,7 +1249,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                         result_upc_same_check = 0
 
                 # UPC is duplicated
-                elif False and len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) > 1:
+                elif tmp_sc in g_data['list_new_store'] and len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']) > 1:
                     result_upc_check = str(len(dict_vendor[tmp_vc][tmp_ic]['upc_dict']))
 
                     if tmp_upc is None:
@@ -1336,7 +1321,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                             result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                             result_note = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['note']
                             if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                print(tmp_ic + "\t" + tmp_upc)
+                                # print(tmp_ic + "\t" + tmp_upc)
                                 result_srp = ' '
 
                 result_ic = tmp_ic
@@ -1375,7 +1360,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                     result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                     result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['note']
                     if flag_ignore_srp_sticker and result_note == 'STICKER':
-                        print(tmp_ic + "\t" + tmp_upc)
+                        # print(tmp_ic + "\t" + tmp_upc)
                         result_srp = ' '
 
                     result_upc_check = '1'
@@ -1400,36 +1385,30 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                         flag_exist_upc = False
                         flag_exist_upc_cand = False
                         flag_exist_exact = False
-                        tmp_ic2 = ''
+                        tmp_ic2 = tmp_ic
                         last_sc = tmp_sc
                         idx_upc_cand = -1
-                        for key1 in dict_vendor[tmp_vc]:
-                            if tmp_sc in dict_vendor[tmp_vc][key1]:
-                                for key3 in dict_vendor[tmp_vc][key1][tmp_sc]:
-                                    if key3 == tmp_upc2:
-                                        flag_exist_upc = True
-                                        flag_exist_upc_cand = False
-                                        tmp_ic2 = key1
-                                        flag_exist_exact = True
-                                        break
-                                    if key3 in tmp_upc_cand:
-                                        flag_exist_upc_cand = True
-                                        flag_exist_upc = False
-                                        idx_upc_cand = tmp_upc_cand.index(key3)
-                                        tmp_ic2 = key1
-                                        flag_exist_exact = True
-                                        break
-                            if flag_exist_exact:
+                        for key3 in dict_vendor[tmp_vc][tmp_ic][tmp_sc]:
+                            if key3 == tmp_upc2:
+                                flag_exist_upc = True
+                                flag_exist_upc_cand = False
+                                flag_exist_exact = True
                                 break
-                            '''
-                            for key2 in dict_vendor[tmp_vc][key1]:
+                            if key3 in tmp_upc_cand:
+                                flag_exist_upc_cand = True
+                                flag_exist_upc = False
+                                idx_upc_cand = tmp_upc_cand.index(key3)
+                                flag_exist_exact = True
+                                break
+                        if not flag_exist_exact and tmp_sc in g_data['list_new_store']:
+                            for key2 in dict_vendor[tmp_vc][tmp_ic]:
                                 if key2 == 'upc_dict':
                                     continue
-                                for key3 in dict_vendor[tmp_vc][key1][key2]:
+                                for key3 in dict_vendor[tmp_vc][tmp_ic][key2]:
                                     if key3 == tmp_upc2:
                                         flag_exist_upc = True
                                         flag_exist_upc_cand = False
-                                        tmp_ic2 = key1
+                                        tmp_ic2 = tmp_ic
                                         last_sc = key2
                                         if key2 == tmp_sc:
                                             flag_exist_exact = True
@@ -1438,155 +1417,21 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                                         flag_exist_upc_cand = True
                                         flag_exist_upc = False
                                         idx_upc_cand = tmp_upc_cand.index(key3)
-                                        tmp_ic2 = key1
+                                        tmp_ic2 = tmp_ic
                                         last_sc = key2
                                         if key2 == tmp_sc:
                                             flag_exist_exact = True
                                             break
                                 if flag_exist_exact:
                                     break
-                            if flag_exist_exact:
-                                break
-                            '''
 
                         # UPC가 Store 내에 없는 경우
                         if not flag_exist_upc and not flag_exist_upc_cand:
                             tmp_upc_cand_list = []
-                            for cand in dict_vendor[tmp_vc][tmp_ic][tmp_sc]:
+                            for cand in dict_vendor[tmp_vc][tmp_ic]['upc_dict']:
                                 tmp_upc_cand_list.append(cand)
                             tmp_upc_cand2.extend(tmp_upc_cand_list)
-                            if len(dict_vendor[tmp_vc][tmp_ic][tmp_sc].keys()) > 0:
-
-                                # UPC is sole
-                                if len(dict_vendor[tmp_vc][tmp_ic][tmp_sc].keys()) == 1:
-                                    result_upc_check = '1'
-                                    # itr = iter(dict_vendor[tmp_vc][tmp_ic])
-                                    # next(itr)
-                                    result_upc = next(iter(dict_vendor[tmp_vc][tmp_ic][tmp_sc]))
-                                    result_desc_lookup_base = 'I'
-                                    result_desc = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['desc']
-                                    result_csize = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['csize']
-                                    vendor_csize = lookup_vendor_ic(g_data, result_csize, tmp_vc, tmp_sc, tmp_ic_cand, tmp_upc)
-                                    if float(vendor_csize) != float(result_csize):
-                                        detail_cat = '업체 데이터로 Lookup해온 F19 대체'
-                                    result_csize = vendor_csize
-                                    if param_etc['step'] == 4 and tmp_vc in ['1205', '1210']:
-                                        result_csize = 1
-                                        detail_cat = 'Frito-ray 및 Cloverland F19 1로 고정'
-                                    result_old_case_cost = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['ccost']
-                                    result_new_case_cost = tmp_ncost
-                                    if tmp_flag_processed_ce == 1:
-                                        result_ncost = tmp_ncost * result_csize
-                                        result_new_case_cost = tmp_ncost * result_csize
-                                        result_amt = tmp_amt * result_csize
-                                        result_flag_processed_ce = 0
-                                    elif param_etc['step'] == 4 and tmp_c_or_e in ['e', 'E']:
-                                        result_ncost = (tmp_ncost / tmp_csize) * result_csize
-                                        result_new_case_cost = (tmp_ncost / tmp_csize) * result_csize
-                                        result_amt = (tmp_amt / tmp_csize) * result_csize
-                                    result_price = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['price']
-
-                                    result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
-                                    result_note = dict_vendor[tmp_vc][tmp_ic][tmp_sc][result_upc]['note']
-                                    if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                        print(tmp_ic + "\t" + tmp_upc)
-                                        result_srp = ' '
-
-                                    tmp_upc3, tmp_upc_cand = getFormalUPC(result_upc, tmp_vc)
-                                    if tmp_upc == result_upc or result_upc in tmp_upc_cand:
-                                        result_upc_same_check = 1
-                                    else:
-                                        result_upc_same_check = 0
-
-                                # UPC is duplicated
-                                elif len(dict_vendor[tmp_vc][tmp_ic][tmp_sc].keys()) > 1:
-
-                                    if tmp_upc is None:
-                                        dict_error_flag['duplicate'] = 0
-
-                                    else:
-                                        tmp_upc2, tmp_upc_cand = getFormalUPC(tmp_upc, tmp_vc)
-
-                                        # UPC 기준으로 탐색
-                                        flag_exist_upc = False
-                                        flag_exist_upc_cand = False
-                                        last_sc = tmp_sc
-                                        idx_upc_cand = -1
-                                        if tmp_sc in dict_vendor[tmp_vc][tmp_ic]:
-                                            for key2 in dict_vendor[tmp_vc][tmp_ic][tmp_sc]:
-                                                if key2 == tmp_upc2:
-                                                    flag_exist_upc = True
-                                                    flag_exist_upc_cand = False
-                                                    break
-                                                if key2 in tmp_upc_cand:
-                                                    flag_exist_upc_cand = True
-                                                    flag_exist_upc = False
-                                                    idx_upc_cand = tmp_upc_cand.index(key2)
-                                                    break
-                                        '''
-                                        for key1 in dict_vendor[tmp_vc][tmp_ic]:
-                                            if key1 == 'upc_dict':
-                                                continue
-                                            for key2 in dict_vendor[tmp_vc][tmp_ic][key1]:
-                                                if key2 == tmp_upc2:
-                                                    flag_exist_upc = True
-                                                    flag_exist_upc_cand = False
-                                                    last_sc = key1
-                                                    break
-                                                if key2 in tmp_upc_cand:
-                                                    flag_exist_upc_cand = True
-                                                    flag_exist_upc = False
-                                                    idx_upc_cand = tmp_upc_cand.index(key2)
-                                                    last_sc = key1
-                                                    break
-                                            if flag_exist_upc or flag_exist_upc_cand:
-                                                break
-                                        '''
-
-                                        # UPC가 없는 경우
-                                        if not flag_exist_upc and not flag_exist_upc_cand:
-                                            tmp_upc_cand_list = []
-                                            for cand in dict_vendor[tmp_vc][tmp_ic]['upc_dict']:
-                                                tmp_upc_cand_list.append(cand)
-                                            tmp_upc_cand2.extend(tmp_upc_cand_list)
-                                            dict_error_flag['new'] = 1
-                                        else:
-                                            result_desc_lookup_base = 'U'
-                                            if flag_exist_upc:
-                                                result_upc = tmp_upc2
-                                            else:
-                                                result_upc = tmp_upc_cand[idx_upc_cand]
-                                            result_desc = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['desc']
-                                            result_csize = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['csize']
-                                            vendor_csize = lookup_vendor_ic(g_data, result_csize, tmp_vc, tmp_sc, tmp_ic_cand, tmp_upc)
-                                            if float(vendor_csize) != float(result_csize):
-                                                detail_cat = '업체 데이터로 Lookup해온 F19 대체'
-                                            result_csize = vendor_csize
-                                            if param_etc['step'] == 4 and tmp_vc in ['1205', '1210']:
-                                                result_csize = 1
-                                                detail_cat = 'Frito-ray 및 Cloverland F19 1로 고정'
-                                            result_old_case_cost = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc][
-                                                'ccost']
-                                            result_new_case_cost = tmp_ncost
-                                            if tmp_flag_processed_ce == 1:
-                                                result_ncost = tmp_ncost * result_csize
-                                                result_new_case_cost = tmp_ncost * result_csize
-                                                result_amt = tmp_amt * result_csize
-                                                result_flag_processed_ce = 0
-                                            elif param_etc['step'] == 4 and tmp_c_or_e in ['e', 'E']:
-                                                result_ncost = (tmp_ncost / tmp_csize) * result_csize
-                                                result_new_case_cost = (tmp_ncost / tmp_csize) * result_csize
-                                                result_amt = (tmp_amt / tmp_csize) * result_csize
-                                            result_price = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['price']
-
-                                            result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
-                                            result_note = dict_vendor[tmp_vc][tmp_ic][last_sc][result_upc]['note']
-                                            if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                                print(tmp_ic + "\t" + tmp_upc)
-                                                result_srp = ' '
-
-                                else:
-                                    dict_error_flag['new'] = 1
+                            dict_error_flag['new'] = 1
 
                             result_ic = tmp_ic
                             result_cand_ic = getFormalItemCode(result_ic, tmp_vc, dict_vend)
@@ -1623,7 +1468,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                             result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                             result_note = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['note']
                             if flag_ignore_srp_sticker and result_note == 'STICKER':
-                                print(tmp_ic + "\t" + tmp_upc)
+                                # print(tmp_ic + "\t" + tmp_upc)
                                 result_srp = ' '
                             result_ic = tmp_ic2
                             result_cand_ic = getFormalItemCode(result_ic, tmp_vc, dict_vend)
@@ -1750,33 +1595,33 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                                 break
                         if flag_exist_exact:
                             break
-                    '''
-                    for key2 in dict_vendor[tmp_vc][key1]:
-                        if key2 == 'upc_dict':
-                            continue
-                        for key3 in dict_vendor[tmp_vc][key1][key2]:
-                            if key3 == tmp_upc2:
-                                flag_exist_upc = True
-                                flag_exist_upc_cand = False
-                                tmp_ic2 = key1
-                                last_sc = key2
-                                if key2 == tmp_sc:
-                                    flag_exist_exact = True
-                                    break
-                            if key3 in tmp_upc_cand:
-                                flag_exist_upc_cand = True
-                                flag_exist_upc = False
-                                idx_upc_cand = tmp_upc_cand.index(key3)
-                                tmp_ic2_cand = key1
-                                last_sc_cand = key2
-                                if key2 == tmp_sc:
-                                    flag_exist_exact = True
-                                    break
+                if not flag_exist_exact and tmp_sc in g_data['list_new_store']:
+                    for key1 in dict_vendor[tmp_vc]:
+                        for key2 in dict_vendor[tmp_vc][key1]:
+                            if key2 == 'upc_dict':
+                                continue
+                            for key3 in dict_vendor[tmp_vc][key1][key2]:
+                                if key3 == tmp_upc2:
+                                    flag_exist_upc = True
+                                    flag_exist_upc_cand = False
+                                    tmp_ic2 = key1
+                                    last_sc = key2
+                                    if key2 == tmp_sc:
+                                        flag_exist_exact = True
+                                        break
+                                if key3 in tmp_upc_cand:
+                                    flag_exist_upc_cand = True
+                                    flag_exist_upc = False
+                                    idx_upc_cand = tmp_upc_cand.index(key3)
+                                    tmp_ic2_cand = key1
+                                    last_sc_cand = key2
+                                    if key2 == tmp_sc:
+                                        flag_exist_exact = True
+                                        break
+                            if flag_exist_exact:
+                                break
                         if flag_exist_exact:
                             break
-                    if flag_exist_exact:
-                        break
-                    '''
 
                 # UPC가 없는 경우
                 if not flag_exist_upc and not flag_exist_upc_cand:
@@ -1822,7 +1667,7 @@ def data_lookup(g_data, tmp_upc, tmp_sc, tmp_vc, tmp_ic, tmp_csize, tmp_ncost, t
                     result_old_case_cost, result_new_case_cost, result_price, result_old_margin, result_new_margin, result_srp = getSrpSet(result_csize, result_old_case_cost, result_new_case_cost, result_price, tmp_vat)
                     result_note = dict_vendor[tmp_vc][tmp_ic2][last_sc][result_upc]['note']
                     if flag_ignore_srp_sticker and result_note == 'STICKER':
-                        print(tmp_ic + "\t" + tmp_upc)
+                        # print(tmp_ic + "\t" + tmp_upc)
                         result_srp = ' '
 
     if result_desc_lookup_base == 'N':
@@ -2376,7 +2221,7 @@ def process_step_two(thread_id, g_data, param1):
                         f_error_log.write(f+'\t'+str(idx1+1)+'\t'+'date format error in '+str(tmp_date)+'\n\n')
                         f_error_log.close()
                         break
-                    if tmp_sc is None or len(tmp_sc) != 3 or int(tmp_sc) > 13 or int(tmp_sc) < 1:
+                    if tmp_sc is None or len(tmp_sc) != 3 or tmp_sc not in dict_store:
                         f_error_log = open(file_error_log, 'a')
                         flag_error = 1
                         f_error_log.write(f+'\t'+str(idx1+1)+'\t'+'store code format error in '+str(tmp_sc)+'\n\n')
@@ -2612,6 +2457,7 @@ def process_step_four(thread_id, g_data, param1):
     for f in listdir(file_dir_target):
         idx0 += 1
         file_targ = join(file_dir_target, f)
+
         if isfile(file_targ):
             wb_t = load_workbook(file_targ)
             ws_t = wb_t['Sheet1']
@@ -2674,7 +2520,7 @@ def process_step_four(thread_id, g_data, param1):
                     f_error_log.write(f+'\t'+str(idx1+1)+'\t'+'date format error in '+str(tmp_date)+'\n\n')
                     f_error_log.close()
                     break
-                if tmp_sc is None or len(tmp_sc) != 3 or int(tmp_sc) > 13 or int(tmp_sc) < 1:
+                if tmp_sc is None or len(tmp_sc) != 3 or tmp_sc not in dict_store:
                     f_error_log = open(file_error_log, 'a')
                     flag_error = 1
                     f_error_log.write(f+'\t'+str(idx1+1)+'\t'+'store code format error in '+str(tmp_sc)+'\n\n')

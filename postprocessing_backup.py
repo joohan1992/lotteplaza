@@ -1,7 +1,7 @@
 from openpyxl import load_workbook, Workbook
 from os import listdir, mkdir, remove
 from os.path import isfile, join, isdir
-
+import dataEntryFunction as df
 
 def build_cb_item(row):
     dict_item = dict()
@@ -203,13 +203,20 @@ dict_store = {
     '010': 'MD21',
     '011': 'FL01',
     '012': 'VA05',
-    '013': 'NJ01'
+    '013': 'NJ01',
+    '014': 'VA06',
+    '015': 'FL02'
 }
 flag_add_cp_margin = True
 flag_dup_cb_udf = False
 add_file_nm = '_ORG'
 add_file_nm = '_MD'
-date_output = '122822'
+date_output = df.postprocessing_date_process() ## str : mmddyy
+print()
+print()
+print("date_output : ",date_output)
+print()
+print()
 date_process = date_output[:4]+'20'+date_output[4:]
 exceptional = ['0140', '0154']  # RB, SW
 test_mode = False
@@ -700,3 +707,8 @@ for sc in dict_sc:
 
 print("total: "+str(tot))
 print("validation_result: "+str(flag_false))
+print("postprocessing_backup.py까지 실행되었습니다.")
+print("==================================================")
+print("==================================================")
+print("finalProcessing.py 실행...")
+exec(open("finalProcessing.py", encoding="utf-8").read())

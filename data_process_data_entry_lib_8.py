@@ -55,7 +55,7 @@ def getFormalAMT(csize, ccost):
 def getVAT(vc, sc):
     if vc is not None and vc == '1229':
         return 11.5
-    elif sc is not None and sc == '011':
+    elif sc is not None and sc in ['011', '015']:
         return 5
     else:
         return 0

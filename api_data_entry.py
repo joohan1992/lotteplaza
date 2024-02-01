@@ -1,9 +1,10 @@
-from flask import Flask, request, redirect, url_for, flash, render_template, session, send_file
+from flask import Flask, request, redirect, url_for, flash, render_template, session, send_file, abort
 from flask_cors import CORS, cross_origin
 from flask_caching import Cache
 from werkzeug.utils import secure_filename
 from os.path import isdir, join, isfile
 from os import mkdir, remove, listdir
+from datetime import timedelta
 
 # import lib_api_data_entry as de_lib
 # import lib_api_data_entry_vendor_data as de_lib
@@ -14,7 +15,9 @@ import lib_api_data_entry_store_data_clean as de_lib
 import lib_api_data_entry_load as de_lib_load
 
 
-g_data = {'base_address': 'http://211.58.242.46:8082',
+
+
+g_data = {'base_address': 'http://10.28.78.30:8082',
           'fname_dict_vendor': '',
           'status_dict_vendor': 0,
           'fname_dict_store': '',
@@ -25,7 +28,7 @@ g_data = {'base_address': 'http://211.58.242.46:8082',
           'dict_vend': None,
           'list_step_two': {},
           'list_step_four': {},
-          'fname_base_data': '120922 INVOICE FORMAT.xlsx',
+          'fname_base_data': '101023 INVOICE FORMAT.xlsx',
           # 업체 데이터 활용 시 기본 설정값
           # - name: 파일명
           # - sheet: 시트명
@@ -36,9 +39,9 @@ g_data = {'base_address': 'http://211.58.242.46:8082',
           # - prefix: 데이터 읽어들일 시 업체별 아이템 prefix 적용 여부 True/False(Boolean)
           'conf_vendor_item_code': {
               'SV_FL01': {'name': '112219 FL01 SV MP.xlsx', 'sheet': 'SV',
-                          'vc': '1229', 'sc_type': 'eq', 'sc': ['011'], 'pos': (2, 0, 1, 3, 4), 'prefix': True},
+                          'vc': '1229', 'sc_type': 'eq', 'sc': ['011', '015'], 'pos': (2, 0, 1, 3, 4), 'prefix': True},
               'SV_ETC': {'name': '102819 SV MP.xlsx', 'sheet': 'SV',
-                         'vc': '1229', 'sc_type': 'ne', 'sc': ['011'], 'pos': (2, 0, 1, 3, 4), 'prefix': True},
+                         'vc': '1229', 'sc_type': 'ne', 'sc': ['011', '015'], 'pos': (2, 0, 1, 3, 4), 'prefix': True},
               'JFC': {'name': '112919 JFC.xlsx', 'sheet': 'SQL Results',
                       'vc': '0202', 'sc_type': 'all', 'sc': [], 'pos': (1, 1, 2, 3, 4), 'prefix': True},
               'CJ': {'name': '113019 CJ.xlsx', 'sheet': 'CJ ORDER BOOK',
@@ -59,14 +62,37 @@ g_data = {'base_address': 'http://211.58.242.46:8082',
                       'vc': '1005', 'sc_type': 'all', 'sc': [], 'pos': (4, 1, 2, 3, 5), 'prefix': True}
           },
           'dict_vendor_item_code': None,
-          'dict_store_code': ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '011', '012', '013']
+          'dict_store_code': ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015'],
+          'list_new_store': []
 }
+
+## 다른 python 파일에서 exec로 실행시켰는지 체크하는 로직.
+try :
+    if portNum is not None:
+        print("indirect excute :",portNum)
+        g_data['base_address'] = 'http://10.28.78.30:' + portNum
+    if flagMarginDiff is not None:
+        print("indirect excute :", flagMarginDiff)
+        de_lib.setFlagMarginDiff(flagMarginDiff)
+
+except :
+    print("direct excute")
 
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
+# 차단하려는 IP 주소 목록
+BLOCKED_IPS = ["185.216.140.186", "194.165.16.76", "91.191.209.202", "193.37.255.114", "80.66.88.204", "54.91.70.115", "49.51.252.126", "45.140.17.52"]
+
+@app.before_request
+def make_session_permanent():
+    if request.remote_addr in BLOCKED_IPS:
+        abort(403)  # Forbidden
+        print(f"BLOCKED IP : {request.remote_addr}")
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(hours=12)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():

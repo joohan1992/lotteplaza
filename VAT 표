@@ -31,6 +31,8 @@ VAT 표
 * 011	Orlando	FL01 => 작업 제외
 012	Herndon	VA05
 013	Edison	NJ01
+014	Sterling	VA06
+015	Tampa	FL02
 
 F01, F902, F1000, F27, F1184, F26, Description, F1001, F19, F38, F39, F90, QTY, Amount, F1122, OLD CASE COST, NEW CASE COST, PRICE, OLD MARGIN, NEW MARGIN, Converted Price, CP Margin
 

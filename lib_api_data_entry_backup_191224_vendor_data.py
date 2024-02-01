@@ -81,7 +81,7 @@ def getFormalAMT(csize, ccost):
 def getVAT(vc, sc):
     if vc is not None and vc == '1229':
         return 11.5
-    elif sc is not None and sc == '011':
+    elif sc is not None and sc in ['011', '015']:
         return 5
     else:
         return 0
@@ -2049,7 +2049,7 @@ def process_step_two(thread_id, g_data, param1):
                         f_error_log.write(f+'\t'+str(idx1+1)+'\t'+'date format error in '+str(tmp_date)+'\n\n')
                         f_error_log.close()
                         break
-                    if tmp_sc is None or len(tmp_sc) != 3 or int(tmp_sc) > 13 or int(tmp_sc) < 1:
+                    if tmp_sc is None or len(tmp_sc) != 3 or tmp_sc not in dict_store:
                         f_error_log = open(file_error_log, 'a')
                         flag_error = 1
                         f_error_log.write(f+'\t'+str(idx1+1)+'\t'+'store code format error in '+str(tmp_sc)+'\n\n')
@@ -2326,7 +2326,7 @@ def process_step_four(thread_id, g_data, param1):
                         f_error_log.write(f+'\t'+str(idx1+1)+'\t'+'date format error in '+str(tmp_date)+'\n\n')
                         f_error_log.close()
                         break
-                    if tmp_sc is None or len(tmp_sc) != 3 or int(tmp_sc) > 13 or int(tmp_sc) < 1:
+                    if tmp_sc is None or len(tmp_sc) != 3 or tmp_sc not in dict_store:
                         f_error_log = open(file_error_log, 'a')
                         flag_error = 1
                         f_error_log.write(f+'\t'+str(idx1+1)+'\t'+'store code format error in '+str(tmp_sc)+'\n\n')

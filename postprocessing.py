@@ -177,7 +177,9 @@ dict_store = {
     '010': 'MD21',
     '011': 'FL01',
     '012': 'VA05',
-    '013': 'NJ01'
+    '013': 'NJ01',
+    '014': 'VA06',
+    '015': 'FL02'
 }
 date_output = '082820'
 date_process = date_output+'20'
