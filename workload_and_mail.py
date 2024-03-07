@@ -9,11 +9,8 @@ now = datetime.datetime.now()
 now_yymmdd = now.strftime("%y%m%d")
 now_mmdd = now.strftime("%m%d")
 now_yyyymmdd = now.strftime("%Y-%m-%d")
- ## R1, R2 입력 후 출력 결과물 복사해서 그대로 붙여넣으면 됩니다.
- ## 문자열로 입력시 공백이나 앞에 0 입력해도 됩니다. (int로 입력해도 됨)
 
  ## 구글시트 출력순서 그대로 복붙하시면 됩니다.
- ## 순서대로 출력됩니다.
 구글시트출력순서 = '''
 
 임미화
@@ -24,34 +21,28 @@ now_yyyymmdd = now.strftime("%Y-%m-%d")
 BI
 
 '''
-#@todo : ##move_files_with_rename(PATH1,PATH2) 이용해서 제외파일 합치기
-## 제외파일합치기
 
-##df.move_files_with_rename(r"C:\Users\user\Documents\GitHub\lotteplaza\작업파일\1203\제외",r"C:\Users\user\Documents\GitHub\lotteplaza\작업파일\1204\제외")
-##df.move_files_with_rename(r"C:\Users\user\Desktop\1203",r"C:\Users\user\Desktop\1204")  #원본만들어놔야됨
-# 최진호님 없는버전
-검수_1차 = {
-        ###     R1   R2
-      "서지민" : [ "1088" , "112"],
-         "최진호" : [ " 194" , "148" ],
-            "임미화" : [ " 487" , "056"],
-               "윤수연" : [ "1018" , "138" ],
-                  "이지원" : [ " 558" , "045" ],
 
-}
-## 자리다시맞춰야됨
-
+# 검수_1차 = {
+#         ###     R1   R2
+#       "서지민" : [ "1088" , "112"],
+#          "최진호" : [ " 194" , "148" ],
+#             "임미화" : [ " 487" , "056"],
+#                "윤수연" : [ "1018" , "138" ],
+#                   "이지원" : [ " 558" , "045" ],
+#
+# }
 검수1차ocr ='''
-아래에 네이버 ocr로 단톡방에 올라온 검수 이미지파일 복붙해서 넣으면 됩니다.
-뭔가 에러나거나 잘 안되면 위의 검수_1차 dictionary 이용하세요
-
-서지민 R1: 588 / R2: 132
-임미화 R1: 401 / R2: 207
-윤수연 R1: 663 / R2:81
-이지원 R1: 504 / R2: 172
+        *** 아래에 네이버 ocr로 단톡방에 올라온 검수 이미지파일 복붙해서 넣으면 됩니다. ***
+            뭔가 에러나거나 잘 안되면 위의 검수_1차 dictionary 이용하세요
+            
+서지민 R1: 1158 / R2: 139
+임미화 R1: 396 / R2: 84
+윤수연 R1: 730 / R2: 103
+이지원 R1: 1022 / R2: 144
 
 '''
-검수_1차 = df.get_first_workdata (검수1차ocr)
+검수_1차 = df.get_first_workdata(검수1차ocr)
 검수_2차 = df.get_second_workdata ()
 
 # 검수_1차 = {
@@ -128,7 +119,7 @@ for 작업자 in 구글시트출력순서.split("\n") :
         else:
             작업자순서 += f"----{작업자}"
             구글시트복사용 += f"0\t0\n"
-구글시트복사용 += "0\t400"
+구글시트복사용 += "0\t435"
 작업자순서 += "----BI 순서대로"
 print(작업자순서)
 print(구글시트복사용)
@@ -137,7 +128,7 @@ print(구글시트복사용)
 작업량기록여부 = False
 if df.isMonday(): ## 월요일이면
     try :
-        filepath = "C:/Users/user/Documents/GitHub/lotteplaza/작업파일/" + now_mmdd + "/" + str(int(now_yymmdd) - 1) + "_" + objdate[0] + ".xlsx에서 분류행 개수 세는중.."
+        filepath = "C:/Users/user/Documents/GitHub/lotteplaza/작업파일/" + now_mmdd + "/" + str(int(now_yymmdd) - 1) + "_" + objdate[0] + ".xlsx"
         print(filepath)
         분류행개수 = df.getClassifiedRows(filepath)
         print("주말 : 분류된 행 개수는 " + str(분류행개수) + " 개 입니다. 그대로 입력하세요")
@@ -145,7 +136,7 @@ if df.isMonday(): ## 월요일이면
         filepath = "C:/Users/user/Documents/GitHub/lotteplaza/작업파일/" + now_mmdd + "/" + now_yymmdd + "_" + objdate[0] + ".xlsx"
         print(filepath)
         분류행개수 = df.getClassifiedRows(filepath)
-        print("월요일 : 분류된 행 개수 + 400은 "+str(분류행개수 + 400)+" 개 입니다.")
+        print("월요일 : 분류된 행 개수 + 435은 "+str(분류행개수 + 435)+" 개 입니다.")
     except :
         print("ERROR")
 else:                   ## 월요일 아닌경우
@@ -153,7 +144,7 @@ else:                   ## 월요일 아닌경우
         filepath = "C:/Users/user/Documents/GitHub/lotteplaza/작업파일/" + now_mmdd + "/" + now_yymmdd + "_" + objdate[0] + ".xlsx"
         print(filepath)
         분류행개수 = df.getClassifiedRows(filepath)
-        print("분류된 행 개수 + 400은 "+str(분류행개수 + 400)+" 개 입니다.")
+        print("분류된 행 개수 + 435은 "+str(분류행개수 + 435)+" 개 입니다.")
         작업량기록엑셀파일경로 = "C:/Users/user/Documents/GitHub/lotteplaza/작업파일/" + now_mmdd + "/결과/Data_Entry_작업량_기록_" + now_mmdd + "2024.xlsx"
         workbook = openpyxl.load_workbook(작업량기록엑셀파일경로)
         sheet = workbook.active
@@ -164,7 +155,7 @@ else:                   ## 월요일 아닌경우
                 b_column = b_column.strftime('%Y-%m-%d')
             if b_column == now_yyyymmdd:
                 sheet.cell(row=row, column=3).value = 단계1작업수  # C열에 입력할 값
-                sheet.cell(row=row, column=4).value = 분류행개수 + 400  # D열에 입력할 값
+                sheet.cell(row=row, column=4).value = 분류행개수 + 435  # D열에 입력할 값
                 break
         # 수정된 내용을 저장
         workbook.save(작업량기록엑셀파일경로)
@@ -204,7 +195,7 @@ pyperclip.copy(구글시트복사용)
 print("\n클립보드에 구글시트복사용 저장했습니다.")
 
 if 작업량기록여부:
-    print(f"Data_Entry_작업량_기록 엑셀파일에 오늘 날짜로 각각 {단계1작업수}, {분류행개수 + 400} 입력했습니다.")
+    print(f"Data_Entry_작업량_기록 엑셀파일에 오늘 날짜로 각각 {단계1작업수}, {분류행개수 + 435} 입력했습니다.")
 else :
     print("Data_Entry_작업량_기록 엑셀파일에 오늘 날짜로 작업하지 않았습니다. 직접 입력해주세요.")
 
@@ -230,16 +221,15 @@ if except_count != 0:
 
 본문1 = 본문1.replace("&","&amp;")
 본문1 = 본문1+df.본문2()
-# @TODO : 클립보드에 add하는법 찾아보기
-print(본문1)
-print()
-print()
+
+print(본문1+"\n\n")
 pyperclip.copy(본문1)
+
 print("@"*135)
 print("@@@@@@@@@@@@ 클립보드에 저장 되었습니다 : 메일내용 !그대로! 붙여넣기 (띄어쓰기 안된것처럼 보여도 전송하면 제대로 적용이 됩니다.) @@@@@@@@@@@@@")
 print("@"*135)
 print()
-첨부파일 = f'''"CPB_처리_결과파일_{now_mmdd}2024.zip" "통합작업본_{now_mmdd}2024.xlsx" "통합작업본_{now_mmdd}2024_작업완료원본.xlsx" "PB batch files_{now_mmdd}2024.zip" "제외인보이스_{now_mmdd}2024.zip" "Data_Entry_작업량_기록_{now_mmdd}2024.xlsx"'''
+첨부파일 = f'''"CPB_처리_결과파일_{now_mmdd}2024.zip" "통합작업본_{now_mmdd}2024.xlsx" "통합작업본_{now_mmdd}2024_작업완료원본.xlsx" "PB batch files_{now_mmdd}2024.zip" "제외인보이스_{now_mmdd}2024.zip" "Data_Entry_작업량_기록_{now_mmdd}2024.xlsx" "Daily Note_{now_mmdd}2024.xlsx"'''
 print(첨부파일)
 
 

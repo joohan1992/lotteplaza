@@ -1,7 +1,33 @@
+import decimal
+
 from openpyxl import load_workbook, Workbook
 from os import listdir, mkdir, remove
 from os.path import isfile, join, isdir
 import dataEntryFunction as df
+
+
+dict_sc_tp_bn = {}
+wb_bn = load_workbook('./BI_SMS BATCH #.xlsx')
+idx_month = 1
+idx_week = 0
+idx_bn = 0
+ws_bn = wb_bn.worksheets[idx_month]
+
+for row in ws_bn:
+    if idx_bn > 0:
+        dt = str.strip(row[1+idx_week*7].value)
+        if dt == df.mmddyy:
+            sc = str.strip(row[2+idx_week*7].value)
+            tp = str.strip(row[3+idx_week*7].value[-2:])
+            bn = str.strip(row[4+idx_week*7].value)
+            if sc not in dict_sc_tp_bn:
+                dict_sc_tp_bn[sc] = {}
+            if tp not in dict_sc_tp_bn[sc]:
+                dict_sc_tp_bn[sc][tp] = bn
+    idx_bn += 1
+print(dict_sc_tp_bn)
+
+dict_sc_tp_result = {}
 
 def build_cb_item(row):
     dict_item = dict()
@@ -19,9 +45,17 @@ def build_cb_item(row):
     if f01 is None:
         f01 = ''
     dict_item['f01'] = f01
-    f902 = ''
-    dict_item['f902'] = f902
     f1000 = row[10].value
+    f902 = ''
+    if f1000 not in dict_sc_tp_result:
+        dict_sc_tp_result[f1000] = {}
+    if 'CB' not in dict_sc_tp_result[f1000]:
+        dict_sc_tp_result[f1000]['CB'] = False
+    if f1000 in dict_sc_tp_bn and 'CB' in dict_sc_tp_bn[f1000]:
+        f902 = dict_sc_tp_bn[f1000]['CB']
+        if str.strip(f902) != '':
+            dict_sc_tp_result[f1000]['CB'] = True
+    dict_item['f902'] = f902
     dict_item['f1000'] = f1000
     f27 = row[11].value
     dict_item['f27'] = f27
@@ -89,9 +123,17 @@ def build_pb_item(row):
     if f01 is None:
         f01 = ''
     dict_item['f01'] = f01
-    f902 = ''
-    dict_item['f902'] = f902
     f1000 = row[2].value
+    f902 = ''
+    if f1000 not in dict_sc_tp_result:
+        dict_sc_tp_result[f1000] = {}
+    if 'PB' not in dict_sc_tp_result[f1000]:
+        dict_sc_tp_result[f1000]['PB'] = False
+    if f1000 in dict_sc_tp_bn and 'PB' in dict_sc_tp_bn[f1000]:
+        f902 = dict_sc_tp_bn[f1000]['PB']
+        if str.strip(f902) != '':
+            dict_sc_tp_result[f1000]['PB'] = True
+    dict_item['f902'] = f902
     dict_item['f1000'] = f1000
     f27 = row[3].value
     dict_item['f27'] = f27
@@ -190,23 +232,9 @@ def get_margin(price, case_price, case_size, vat):
     return diff_price / price
 
 
-dict_store = {
-    '001': 'MD300',
-    '002': 'VA111',
-    '003': 'MD91',
-    '004': 'VA77',
-    '005': 'MD100',
-    '006': 'MD600',
-    '007': 'VA900',
-    '008': 'VA500',
-    '009': 'MD700',
-    '010': 'MD21',
-    '011': 'FL01',
-    '012': 'VA05',
-    '013': 'NJ01',
-    '014': 'VA06',
-    '015': 'FL02'
-}
+dict_store = {}
+for sno, scd in df.list_store:
+    dict_store[sno] = scd
 flag_add_cp_margin = True
 flag_dup_cb_udf = False
 add_file_nm = '_ORG'
@@ -468,11 +496,30 @@ if not isdir('./postprocess/result'):
 if not isdir('./postprocess/result/'+date_output+add_file_nm):
     mkdir('./postprocess/result/'+date_output+add_file_nm)
 
+dict_sc_count = {}
+
 tot = 0
 cb_header_reformat = cb_header[:4]+cb_header[9:14]+cb_header[18:]
 print(dict_sc.keys())
 flag_false = True
 for sc in dict_sc:
+    dict_sc_count[sc] = {
+        'str_nm': dict_store[sc],
+        'BK': None,
+        'CB': None,
+        'PB': None,
+        'UDF': None,
+        'PBU': None,
+        'V#': None,
+        'PB$': None,
+        'FUT': None,
+        'CB#': None,
+        'PB#': None,
+        'RMK': None
+    }
+    list_vc = []
+    sum_pb = decimal.Decimal(0.0)
+    sum_fut = decimal.Decimal(0.0)
     print(date_output+' '+dict_store[sc]+' CPB.xlsx')
     file_result = ''
     wb_n = Workbook()
@@ -619,6 +666,9 @@ for sc in dict_sc:
             idx5 += 1
             ws_n_5.cell(idx5+1, 22).number_format = '0%'
             ws_n_5.cell(idx5+1, 23).number_format = '0%'
+
+            if item['f27'] not in list_vc:
+                list_vc.append(item['f27'])
     idx2 = 0
     idx4 = 0
     idx7 = 0
@@ -654,6 +704,9 @@ for sc in dict_sc:
             if flag_add_cp_margin:
                 ws_n_2.cell(idx2+1, 21).number_format = '0%'
 
+            sum_pb += decimal.Decimal(item['price'])
+            sum_fut += decimal.Decimal(tmp_converted_price)
+
     ws_n_1.freeze_panes = 'A2'
     ws_n_1.auto_filter.ref = ws_n_1.dimensions
     ws_n_2.freeze_panes = 'A2'
@@ -667,15 +720,32 @@ for sc in dict_sc:
     ws_n_9.freeze_panes = 'A2'
     ws_n_9.auto_filter.ref = ws_n_9.dimensions
 
-    print(ws_n_1.title+': '+str(ws_n_1.max_row - 1 - cnt_dup_cb_udf))
-    print(ws_n_2.title+': '+str(ws_n_2.max_row - 1))
-    print(ws_n_3.title+': '+str(ws_n_3.max_row - 1))
-    print(ws_n_4.title+': '+str(ws_n_4.max_row - 1))
-    print(ws_n_5.title+': '+str(ws_n_5.max_row - 1)) # 1247
+    bk_cnt = ws_n_5.max_row - 1
+    cb_cnt = ws_n_1.max_row - 1 - cnt_dup_cb_udf
+    pb_cnt = ws_n_2.max_row - 1
+    udf_cnt = ws_n_3.max_row - 1
+    pbu_cnt = ws_n_4.max_row - 1
+    rmk_cnt = ws_n_10.max_row - 1
+    print(ws_n_1.title+': '+str(cb_cnt))
+    dict_sc_count[sc]['CB'] = cb_cnt if cb_cnt != 0 else None
+    print(ws_n_2.title+': '+str(pb_cnt))
+    dict_sc_count[sc]['PB'] = pb_cnt if pb_cnt != 0 else None
+    print(ws_n_3.title+': '+str(udf_cnt))
+    dict_sc_count[sc]['UDF'] = udf_cnt if udf_cnt != 0 else None
+    print(ws_n_4.title+': '+str(pbu_cnt))
+    dict_sc_count[sc]['PBU'] = pbu_cnt if pbu_cnt != 0 else None
+    print(ws_n_5.title+': '+str(bk_cnt)) # 1247
+    dict_sc_count[sc]['BK'] = bk_cnt if bk_cnt != 0 else None
     #print(ws_n_6.title+': '+str(ws_n_6.max_row - 1))
     #print(ws_n_8.title+': '+str(ws_n_8.max_row - 1))
     print(ws_n_9.title+': '+str(ws_n_9.max_row - 1))
-    print(ws_n_10.title+': '+str(ws_n_10.max_row - 1)) # OMIT_DUPLICATION
+    print(ws_n_10.title+': '+str(rmk_cnt)) # OMIT_DUPLICATION
+    dict_sc_count[sc]['RMK'] = rmk_cnt if rmk_cnt != 0 else None
+    dict_sc_count[sc]['V#'] = len(list_vc)
+    dict_sc_count[sc]['PB$'] = round(sum_pb, 2) if sum_pb != decimal.Decimal(0.0) else None
+    dict_sc_count[sc]['FUT'] = round(sum_fut, 2) if sum_fut != decimal.Decimal(0.0) else None
+    dict_sc_count[sc]['CB#'] = dict_sc_tp_bn[sc]['CB'] if sc in dict_sc_tp_bn and 'CB' in dict_sc_tp_bn[sc] else None
+    dict_sc_count[sc]['PB#'] = dict_sc_tp_bn[sc]['PB'] if sc in dict_sc_tp_bn and 'PB' in dict_sc_tp_bn[sc] else None
     print('sr_srp: '+str(cnt_sr_srp))
     #print('cb_ex: '+str(cnt_cb_ex))
     print((ws_n_1.max_row + ws_n_2.max_row + ws_n_3.max_row + ws_n_4.max_row - 4 - cnt_sr_srp - cnt_dup_cb_udf)) # 1250
@@ -704,6 +774,77 @@ for sc in dict_sc:
     if ws_n_10.max_row == 1:
         wb_n.remove_sheet(ws_n_10)
     wb_n.save('./postprocess/result/'+date_output+add_file_nm+'/'+date_output+' '+dict_store[sc]+' CPB.xlsx')
+
+flag_not_exist_bn = False
+for key in dict_sc_tp_result:
+    if 'CB' in dict_sc_tp_result[key] and not dict_sc_tp_result[key]['CB']:
+        print(f'* {key} CB 배치번호 누락')
+        flag_not_exist_bn = True
+    elif 'PB' in dict_sc_tp_result[key] and not dict_sc_tp_result[key]['PB']:
+        print(f'* {key} PB 배치번호 누락')
+        flag_not_exist_bn = True
+if flag_not_exist_bn:
+    while True:
+        print(r"C:\Users\user\Documents\GitHub\lotteplaza\BI_SMS BATCH #.xlsx 확인하기")
+        in_val = input('배치번호가 없는 매장이 있습니다. 계속 진행할까요? Y/N')
+        if in_val == 'Y' or in_val == 'y':
+            break
+        elif in_val == 'N' or in_val == 'n':
+            exit(1)
+        else:
+            print('정확하게 입력해주세요.')
+print("="*110)
+try:
+    data_for_excel = []
+    for sno, scd in df.list_store:
+        if sno not in dict_sc_count:
+            data_for_excel.append([''] * 17 + ['FALSE'])
+            continue
+        row_data = [dict_sc_count[sno].get(key, '') for key in ['BK', 'CB', 'PB', 'UDF', 'PBU', 'V#', 'PB$', 'FUT', 'CB#', 'PB#', 'RMK']]
+        row_data.extend([''] * 6)
+        row_data.append('TRUE' if dict_sc_count[sno].get('BK') is not None else 'FALSE')
+        data_for_excel.append(row_data)
+
+    dailynote_filename = rf"C:\Users\user\Documents\GitHub\lotteplaza\작업파일\{df.mmdd}\결과\Daily Note_{df.mmdd}2024.xlsx"
+    dailynote_workbook = load_workbook(dailynote_filename)
+    dailynote_sheet = dailynote_workbook.active
+
+    row_num = 2     # 2행부터 시작
+    for row in data_for_excel:
+        col_num = 2  # B 열부터 시작
+        for cell_value in row:
+            if cell_value is None:
+                value = ''
+            else :
+                value = cell_value
+            # 셀에 값 쓰기
+            dailynote_sheet.cell(row=row_num, column=col_num).value = value
+            col_num += 1
+        row_num += 1
+    dailynote_workbook.save(dailynote_filename)
+    print(f"{dailynote_filename}에 아래 데이터 저장 성공!")
+except Exception as e:
+    print(f"에러 발생 : {e}, 아래 데이터를 {dailynote_filename}에 저장하지 못했습니다.")
+print("="*110)
+for sno, scd in df.list_store:
+    if sno not in dict_sc_count:
+        print('\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tFALSE')
+        continue
+    print(dict_sc_count[sno]['BK'] if dict_sc_count[sno]['BK'] != None else '', end='\t')
+    print(dict_sc_count[sno]['CB'] if dict_sc_count[sno]['CB'] != None else '', end='\t')
+    print(dict_sc_count[sno]['PB'] if dict_sc_count[sno]['PB'] != None else '', end='\t')
+    print(dict_sc_count[sno]['UDF'] if dict_sc_count[sno]['UDF'] != None else '', end='\t')
+    print(dict_sc_count[sno]['PBU'] if dict_sc_count[sno]['PBU'] != None else '', end='\t')
+    print(dict_sc_count[sno]['V#'] if dict_sc_count[sno]['V#'] != None else '', end='\t')
+    print(dict_sc_count[sno]['PB$'] if dict_sc_count[sno]['PB$'] != None else '', end='\t')
+    print(dict_sc_count[sno]['FUT'] if dict_sc_count[sno]['FUT'] != None else '', end='\t')
+    print(dict_sc_count[sno]['CB#'] if dict_sc_count[sno]['CB#'] != None else '', end='\t')
+    print(dict_sc_count[sno]['PB#'] if dict_sc_count[sno]['PB#'] != None else '', end='\t')
+    print(dict_sc_count[sno]['RMK'] if dict_sc_count[sno]['RMK'] != None else '', end='\t\t\t\t\t\t\t')
+    if dict_sc_count[sno]['BK'] is None:
+        print('FALSE')
+    else:
+        print('TRUE')
 
 print("total: "+str(tot))
 print("validation_result: "+str(flag_false))

@@ -13,6 +13,9 @@ import time
 import threading
 from distutils.dir_util import copy_tree
 
+
+
+
 ## dataEntryFunction.py에서 set_filename()로 설정한 날짜는 오늘날짜(다운로드폴더 하위폴더 이름)입니다.
 ## 다운로드 대상 파일의 날짜는 직접 입력하세요. (보통 오늘날짜 하루 전)
 
@@ -57,6 +60,9 @@ else :
     check = input("계속 진행하려면 아무키나 입력하세요.")
 
 # Chrome WebDriver를 실행한다.
+#from webdriver_manager.chrome import ChromeDriverManager
+#driver = webdriver.Chrome(ChromeDriverManager().install())
+
 driver = webdriver.Chrome()
 # 해당 URL로 이동한다.
 grocery_url = 'http://134.209.127.114/invoice/inv_contractor_main/4/'
@@ -120,46 +126,53 @@ for item_comb in list_comb:
                         list_file_url.append((file_url, item_comb[1], item_comb[2]))
         idx_tr += 1
 
+driver.quit()
+
 dict_result = {}
 list_thread = []
 cnt_running = 0
-for item_file_url in list_file_url:
-    if item_file_url[0] not in list_past:
-        list_current.append(item_file_url[0]+'\n')
-        dict_result[str(cnt_running)] = {}
-        th = threading.Thread(target=df.download, args=(item_file_url[0], today_mmdd, item_file_url[1], dict_result[str(cnt_running)]))
-        th.start()
-        list_thread.append(th)
-        cnt_running += 1
-
-print("다운로드 경로 수집 완료.", cnt_running, "개 파일에 대해서 다운로드를 시작합니다.")
-
-total_cnt = cnt_running
+total_cnt = 0
 processed_cnt = 0
 idx_thread = 0
-while cnt_running > 0:
-    th = list_thread[idx_thread]
-    if not th.is_alive() or 'url' in dict_result[str(idx_thread)]:
-        if 'url' not in dict_result[str(idx_thread)]:
+with open('download_log.txt', 'a') as log_f:
+    for item_file_url in list_file_url:
+        if item_file_url[0] not in list_past:
+            list_current.append(item_file_url[0]+'\n')
+            dict_result[str(cnt_running)] = {'seq': cnt_running, 'url': item_file_url[0], 'state': '100', 'try_cnt': 0}
+            th = threading.Thread(target=df.download, args=(item_file_url[0], today_mmdd, item_file_url[1], dict_result[str(cnt_running)]))
+            th.start()
+            list_thread.append(th)
+            cnt_running += 1
+
+    print("다운로드 경로 수집 완료.", cnt_running, "개 파일에 대해서 다운로드를 시작합니다.")
+
+    total_cnt = cnt_running
+    processed_cnt = 0
+    idx_thread = 0
+    while cnt_running > 0:
+        th = list_thread[idx_thread]
+        if not th.is_alive() or dict_result[str(idx_thread)]['state'] > '900':
+            if dict_result[str(idx_thread)]['state'] == '900':
+                log_f.write(f'{dict_result[str(idx_thread)]["seq"]}>> complete\n')
+            else:
+                log_f.write(f'{dict_result[str(idx_thread)]["seq"]}>> error try_cnt: {dict_result[str(idx_thread)]["try_cnt"]}\n')
             th.join()
+
+            list_thread.pop(idx_thread)
+            cnt_running -= 1
+            processed_cnt += 1
         else:
-            break
+            idx_thread += 1
 
-        list_thread.pop(idx_thread)
-        cnt_running -= 1
-        processed_cnt += 1
-    else:
-        idx_thread += 1
+        if idx_thread >= len(list_thread):
+            idx_thread = 0
 
-    if idx_thread >= len(list_thread):
-        idx_thread = 0
-
-    df.progress_bar(processed_cnt, total_cnt, title="Download", bar_length=40)
+        df.progress_bar(processed_cnt, total_cnt, title="Download", bar_length=40)
 
 print()
 flag_fail = False
 for i in range(total_cnt):
-    if 'url' in dict_result[str(i)]:
+    if dict_result[str(i)]['state'] != '900':
         print(dict_result[str(i)])
         flag_fail = True
 

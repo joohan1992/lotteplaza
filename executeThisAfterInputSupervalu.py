@@ -5,7 +5,7 @@ import os
 import requests
 
 ##################### 이 파일만 실행하면 됩니다. ####################
-df.set_filename()  ##   <<<   날짜수정은 여기서
+#df.set_filename()  ##   <<<   날짜수정은 여기서
 
 filename, objdate = df.set_filename()
 today_mmdd = filename[2:6]

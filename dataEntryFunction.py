@@ -8,20 +8,27 @@ import shutil
 import datetime
 import pymysql
 import time
-
 from selenium import webdriver
 import sys
 
+list_store = [
+    ('001', 'MD300'), ('002', 'VA111'), ('003', 'MD91'), ('004', 'VA77')
+    , ('006', 'MD600'), ('007', 'VA900'), ('008', 'VA500')
+    , ('009', 'MD700'), ('010', 'MD21'), ('011', 'FL01'), ('012', 'VA05')
+    , ('013', 'NJ01'), ('014', 'VA06'), ('015', 'FL02')
+]
+
 ##날짜 string 구하기
-today = datetime.datetime.now() - datetime.timedelta(days=2) # 토요일 당일에 오후 배분 못했을 때 월요일에 다운받는 경우
+#today = datetime.datetime.now() - datetime.timedelta(days=2) # 토요일 당일에 오후 배분 못했을 때 월요일에 다운받는 경우
+#today = datetime.datetime.now() - datetime.timedelta(days=1) # 하루전(테스트용)
 today = datetime.datetime.now()
-today_weekday = (datetime.datetime.now() - datetime.timedelta(days=2)).weekday() # 토요일 당일에 오후 배분 못했을 때 월요일에 다운받는 경우
-today_weekday = datetime.datetime.now().weekday()
+today_weekday = today.weekday() ## 위의 today만 고치면 자동임
 
 # YYMMDD 형식
 yymmdd = today.strftime("%y%m%d")
 # MMDDYY 형식
 mmddyy = today.strftime("%m%d%y")
+mmdd =  today.strftime("%m%d")
 # YYYY-MM-DD 형식
 yyyy_mm_dd = today.strftime("%Y-%m-%d")
 
@@ -130,10 +137,8 @@ def get_second_workdata () :
 
 
 def get_previous_day(yymmdd):
-
     date_obj = datetime.datetime.strptime(yymmdd, '%y%m%d')
     previous_day = date_obj - datetime.timedelta(days=1)
-    print(previous_day)
     return previous_day.strftime('%y%m%d')
 
 
@@ -144,7 +149,7 @@ def fetch_filename_from_link(server_url):
         soup = BeautifulSoup(response.text, 'html.parser')
         links = soup.find_all('a', href=True)
         for link in links:
-            if "DB.xlsx" in link['href']:
+            if ".xlsx" in link['href']:
                 return link.text.strip()
     except requests.RequestException as error:
         print(f"Error fetching data from the server: {error}")
@@ -337,25 +342,40 @@ def download(url, cur_dt, store, dict_result):
         file_name = url.rsplit('/', 1)[1]
         file_name_ext = file_name.rsplit('.', 1)
         idx_dup_file = 0
+        # log_f.write(f'-- {dict_result["seq"]}>> started with file name {file_name}\n')
         while os.path.isfile(f'C:/Users/user/Downloads/{cur_dt}/{store}/{file_name_ext[0]}{"_"+str(idx_dup_file) if idx_dup_file > 0 else ""}.{file_name_ext[1]}'):
             idx_dup_file += 1
+            # log_f.write(f'-- {dict_result["seq"]}>> changed file name to {file_name_ext[0]}{"_"+str(idx_dup_file) if idx_dup_file > 0 else ""}.{file_name_ext[1]}\n')
+        dict_result['state'] = '200'
         isDone = False
         try_cnt = 0
         while not isDone and try_cnt < 5:
             isDone = True
+            dict_result['state'] = '300'
             try:
+                dict_result['state'] = '400'
+                # log_f.write(f'-- {dict_result["seq"]}>> try request try_cnt: {try_cnt}\n')
                 with open(f'C:/Users/user/Downloads/{cur_dt}/{store}/{file_name_ext[0]}{"_"+str(idx_dup_file) if idx_dup_file > 0 else ""}.{file_name_ext[1]}', "wb") as file:   # open in binary mode
-                    response = requests.get(url)               # get request
+                    dict_result['state'] = '401'
+                    response = requests.get(url, timeout=10)               # get request
+                    dict_result['state'] = '402'
                     file.write(response.content)
+                    dict_result['state'] = '403'
+                dict_result['state'] = '404'
             except:
                 try_cnt += 1
                 time.sleep(3)
+                dict_result['state'] = '500'
                 isDone = False
         if try_cnt == 5:
-            dict_result['url'] = url
-            dict_result['try_cnt'] = try_cnt
+            # log_f.write(f'-- {dict_result["seq"]}>> exceed max try request\n')
+            dict_result['state'] = '950'
+        else:
+            dict_result['state'] = '900'
+        dict_result['try_cnt'] = try_cnt
     except:
-        dict_result['url'] = url
+        # log_f.write(f'-- {dict_result["seq"]}>> cannot start try request\n')
+        dict_result['state'] = '930'
         dict_result['try_cnt'] = -1
 
 def getClassifiedRows(filepath):
@@ -374,8 +394,7 @@ def getClassifiedRows(filepath):
     return non_empty_c_count - 1
 
 def 본문1():
-    본문 = '''
-안녕하세요, 리테일앤인사이트 성주한입니다.
+    본문 = '''안녕하세요, 리테일앤인사이트 성주한입니다.
 
 
 금일 전체 인보이스는 총 #{TOT_CNT}건이었습니다.

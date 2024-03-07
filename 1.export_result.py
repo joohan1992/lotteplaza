@@ -19,13 +19,14 @@ def setfoldername1():
 #                     *  검수 완료되면 실행
 #                     *  1,2 하나로 합쳤습니다.
 #                     *  다운받고 > 압축풀고 > 분류하는거까지 실행하는 코드입니다.
-
+#
+# 월요일에는 바탕화면 폴더를 토요일 날짜에서 일요일로 바꾸고 main.py와 open_C_or_E_files.py의 날짜를 하루전으로 변경해야 함
 
 ###################################################################################################
 ###################################################################################################
                                                                                                 ###
                                                                                                 ###
-                    filename = "TOT_240201_01"  ## 가운데 오늘날짜 쓰기     ex) TOT_221221_01    ###
+                    filename = "TOT_240306_01"  ## 가운데 오늘날짜 쓰기     ex) TOT_221221_01    ###
                     objdate  = ""                ## -1로 할거면 ""로 두기   ex) 20221215         ###
                                                                                                 ###
                                                                                                 ###
@@ -78,8 +79,12 @@ for i in os.listdir(작업파일경로):
         if iterInteger < todayinteger and curfolder < iterInteger: ## 오늘날짜보다 작은것중에 가장 큰 폴더
             curfolder = iterInteger
 curfolder = str(curfolder)[1:] ## 다시폴더명으로 변환
+
 shutil.copy2(작업파일경로 + curfolder + "/결과/Data_Entry_작업량_기록_" + curfolder + "2024.xlsx",
              작업파일경로 + today + "/결과/Data_Entry_작업량_기록_" + today + "2024.xlsx")
+
+shutil.copy2(작업파일경로 + curfolder + "/결과/Daily Note_" + curfolder + "2024.xlsx",
+             작업파일경로 + today + "/결과/Daily Note_" + today + "2024.xlsx")
 
 result_3차파일경로 = 작업파일경로 + today + "/3차" + "/" + filename + "_result.xlsx"
 
